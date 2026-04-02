@@ -72,6 +72,6 @@ int repl_tp1(void) {
 int tp1_main(int argc, char *argv[]) {
     montrer_tests();
     test_tp1();
-    /*repl_tp1();*/
+    repl_tp1();
     return 0;
 }
