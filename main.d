@@ -1,1 +1,1 @@
-main.o: main.c tp1.h
+main.o: main.c tp2.h

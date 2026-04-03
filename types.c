@@ -1,5 +1,6 @@
 #include "types.h"
 #include "allocateur.h"
+#include <stdio.h> 
 
 enum valisp_type {entier, chaine, symbole, couple, prim, spec};
 
@@ -30,6 +31,7 @@ void afficher(sexpr e){
     if (e== NULL){
         printf("nil");
     }else {
-        printf("<???>");
+        printf("<\?\?\?>");
     }
 }
+

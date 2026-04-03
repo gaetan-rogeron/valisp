@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 struct valisp_object;
-typedef valisp_object* sexpr;
+typedef struct valisp_object* sexpr;
 
 typedef sexpr (*primitive) (sexpr, sexpr);
 

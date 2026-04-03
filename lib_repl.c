@@ -10,6 +10,9 @@
 #include "lib_memoire.h"
 #include "lib_tests.h"
 #include "lib_repl.h"
+#include "parseur.h"
+#include "types.h"
+#include "erreurs.h"
 
 
 /******************************************************************/
@@ -21,6 +24,21 @@
 
 #pragma weak valisp_stat_memoire
 void valisp_stat_memoire (void);
+
+#pragma weak afficher_env
+void afficher_env(sexpr env);
+
+#pragma weak environnement_global
+sexpr environnement_global(void);
+
+#pragma weak ramasse_miettes_parcourir_et_marquer
+void ramasse_miettes_parcourir_et_marquer (sexpr env);
+
+#pragma weak ramasse_miettes_liberer
+void ramasse_miettes_liberer (sexpr env);
+
+#pragma weak valisp_ramasse_miettes
+void valisp_ramasse_miettes (sexpr env);
 
 #pragma weak allocateur_balloc
 int allocateur_balloc(int);
@@ -36,7 +54,6 @@ int allocateur_bree(int);
 
 #pragma weak allocateur_free
 void *allocateur_free(void*);
-
 
 
 #define TESTER_EXISTENCE(FONCTION)					  \
@@ -107,7 +124,7 @@ void directive_aide(int numero_tp) {
     printf("\n");
 
 
-    if (numero_tp>=4) {
+    if (numero_tp>=3) {
         afficher_titre_aide("Ramasse-miettes");
         afficher_aide("@m", "Marque les blocs atteignables "
                       "(1ère étape du ramasse-miettes)");
@@ -166,6 +183,39 @@ void directive_bree(int indice) {
     printf("\n\n");
 }
 
+/* @env */
+void directive_afficher_environnement(void) {
+    TESTER_EXISTENCE(environnement_global);
+    TESTER_EXISTENCE(afficher_env);
+    afficher_env(environnement_global());
+    printf("\n\n");
+}
+
+/* @rm */
+void directive_ramasse_miette(void) {
+    TESTER_EXISTENCE(environnement_global);
+    TESTER_EXISTENCE(valisp_ramasse_miettes);
+    TESTER_EXISTENCE(valisp_stat_memoire);
+    valisp_ramasse_miettes(environnement_global());
+    valisp_stat_memoire();
+    printf("\n\n");
+}
+
+/* @m */
+void directive_ramasse_miettes_marquer(void) {
+    TESTER_EXISTENCE(environnement_global);
+    TESTER_EXISTENCE(ramasse_miettes_parcourir_et_marquer);
+    ramasse_miettes_parcourir_et_marquer(environnement_global());
+    afficher_memoire();
+}
+
+/* @l */
+void directive_ramasse_miettes_liberer(void) {
+    TESTER_EXISTENCE(environnement_global);
+    TESTER_EXISTENCE(ramasse_miettes_liberer);
+    ramasse_miettes_liberer(environnement_global());
+    afficher_memoire();
+}
 
 
 /******************************************************/
@@ -329,8 +379,150 @@ void lire_directive(char *ligne, int numero_tp) {
 	return;
     }
 
+    if (strcmp(commande, "@env") == 0) {
+        directive_afficher_environnement();
+	return;
+    }
+
+    if (strcmp(commande, "@rm") == 0) {
+        directive_ramasse_miette();
+        return;
+    }
+
+    if (strcmp(commande, "@m")  == 0) {
+        directive_ramasse_miettes_marquer();
+        return;
+    }
+
+    if (strcmp(commande, "@l")  == 0) {
+        directive_ramasse_miettes_liberer();
+        return;
+    }
     printf("Je ne connais pas cette directive\n\n");
 }
 
 
 
+/******************/
+/*                */
+/*  Utilitaires   */
+/*                */
+/******************/
+
+int valisp_read(char * texte, sexpr* res) {
+    int i;
+    char *message_erreur = "";
+    *res = NULL;
+    i = parseur(texte, 0, res);
+    i = nettoyer_espaces(texte,i);
+    if (i>0 && texte[i] == '\0') return 0;
+    if (i>=0) return i;
+
+    switch (i) {
+    case ERREUR_PARSEUR_VIDE:
+    case ERREUR_PARSEUR_INCOMPLET:
+	return i;
+
+    case ERREUR_PARSEUR_ENTIER:
+	message_erreur = "entier invalide";
+	break;
+
+    case ERREUR_PARSEUR_CHAINE:
+	message_erreur = "chaîne invalide";
+	break;
+
+    case ERREUR_PARSEUR_PARENTHESE:
+	message_erreur = "parenthèse fermante orpheline";
+	break;
+
+    case ERREUR_PARSEUR_POINT:
+	message_erreur = "séparateur de cons «.» en position non finale";
+	break;
+
+    case ERREUR_PARSEUR_IMPLEMENTATION:
+	message_erreur = "fonction non implémentée";
+	break;
+
+    default:
+	fprintf(stderr, ">>>>> %d\n", i);
+	ERREUR_FATALE("Code d’erreur du parseur invalide");
+    }
+    erreur_parseur(message_erreur);
+    return 0; /* Pour faire plaisir au compilateur*/
+}
+
+
+int ajout_buffer(char* buffer, int position, char * chaine) {
+  int i;
+  for (i=0; chaine[i] != '\0'; i++) {
+    buffer[position+i] = chaine[i];
+  }
+  buffer[position+i] = '\n';
+  buffer[position+i+1] = '\0';
+  return position+i+1;
+}
+
+void supprime_retour_ligne_finale_buffer(char * buffer) {
+  int i;
+  for (i=0; buffer[i] != '\0'; i++);
+  if (buffer[i-1] == '\n') buffer[i-1] = '\0';
+}
+
+
+
+#pragma weak cons_p
+int cons_p(sexpr);
+
+#pragma weak car
+sexpr car(sexpr);
+
+#pragma weak cdr
+sexpr cdr(sexpr);
+
+#pragma weak run_prim
+sexpr run_prim(sexpr, sexpr, sexpr);
+
+#pragma weak symbol_match_p
+bool symbol_match_p(sexpr, const char*);
+
+#pragma weak symbol_p
+bool symbol_p(sexpr);
+
+#pragma weak new_primitive
+sexpr new_primitive(char*, primitive);
+
+
+int eval_simple(sexpr e, sexpr *res, char *ch, primitive p, char *nom) {
+    if (cons_p == NULL) return 0;
+    if (car == NULL) return 0;
+    if (cdr == NULL) return 0;
+    if (run_prim == NULL) return 0;
+    if (symbol_match_p == NULL) return 0;
+    if (symbol_p == NULL) return 0;
+    if (symbol_p(e) && symbol_match_p(e, ch)) {
+        if (p) {
+            sexpr pr = new_primitive(nom, p);
+            *res = pr;
+            return 1;
+        } else {
+            printf("%sFonction «%s» non implémentée\n%s",
+                   couleur_rouge, nom, couleur_defaut);
+            return 0;
+        }
+
+    }
+    else if (cons_p(e) && symbol_p(car(e)) && symbol_match_p(car(e), ch)) {
+        if (p) {
+            sexpr pr = new_primitive(nom, p);
+            *res = run_prim(pr, cdr(e), NULL);
+            return 1;
+        } else {
+            printf("%sFonction «%s» non implémentée\n%s",
+                   couleur_rouge, nom, couleur_defaut);
+            return 0;
+        }
+
+    } else {
+        return 0;
+    }
+}

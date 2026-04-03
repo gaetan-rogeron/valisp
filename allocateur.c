@@ -1,4 +1,5 @@
 #include "allocateur.h"
+#include <stdio.h>
 
 bloc MEMOIRE_DYNAMIQUE[TAILLE_MEMOIRE_DYNAMIQUE];
 
@@ -49,12 +50,14 @@ int rechercher_bloc_libre(int nombre_blocs) {
 }
 
 int allocateur_balloc(int nombre_blocs) {
+
     int indice = rechercher_bloc_libre(nombre_blocs);
-    if (indice == -1) return -1;
 
     int taille_dispo = taille_bloc(indice);
     int precedent = bloc_precedant(indice);
     int suivant = bloc_suivant(indice);
+
+    if (indice == -1) return -1;
 
     if (taille_dispo > nombre_blocs) {
         int nouvel_indice = indice + nombre_blocs + 1;
@@ -110,15 +113,15 @@ void allocateur_bree(int i) {
 }
 
 void allocateur_free(void *ptr) {
-    if (ptr == NULL) {
-        return; 
-    }
     
     bloc *case_donnees = (bloc *)ptr;
     
     int indice_donnees = case_donnees - MEMOIRE_DYNAMIQUE;
     
     int indice_entete = indice_donnees - 1;
-    
+
+    if (ptr == NULL) {
+        return; 
+    }
     allocateur_bree(indice_entete);
 }
