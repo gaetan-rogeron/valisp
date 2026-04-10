@@ -6,9 +6,11 @@
 #undef bool
 #undef true
 #undef false
+
 typedef int bool;
 #define true 1
 #define false 0
+
 struct valisp_object;
 typedef struct valisp_object* sexpr;
 
@@ -24,5 +26,16 @@ char *chaine_vers_memoire(const char *c);
 sexpr new_string(char *c);
 bool string_p(sexpr val);
 char *get_string(sexpr val);
+
+sexpr new_symbol(char *c);
+bool symbol_p(sexpr val);
+char *get_symbol(sexpr val);
+bool symbol_match_p(sexpr val, const char *chaine);
+
+sexpr cons(sexpr e1, sexpr e2);
+bool cons_p(sexpr e);
+sexpr car(sexpr e);
+void afficher_liste(sexpr e);
+void afficher(sexpr e);
 
 #endif
