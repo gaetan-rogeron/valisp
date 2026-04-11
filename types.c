@@ -46,6 +46,10 @@ void afficher(sexpr e){
     case symbole:
         printf("%s", e->data.STRING);
         break;
+    case couple:
+        printf("(");
+        afficher_liste(e);
+        printf(")");
     default: 
         printf("<\?\?\?>");
         break;
@@ -143,3 +147,60 @@ bool symbol_match_p(sexpr val, const char *chaine) {
     return strcmp(get_symbol(val), chaine) == 0;
 }
 
+sexpr cons(sexpr e1, sexpr e2) {
+    sexpr obj = (sexpr)valisp_malloc(sizeof(struct valisp_object));
+    obj->type = couple;
+    obj->data.CONS.car = e1;
+    obj->data.CONS.cdr = e2;
+    return obj;
+}
+
+bool cons_p(sexpr e) {
+    if (e == NULL) return false;
+    return e->type == couple;
+}
+
+sexpr car(sexpr e){
+    if (e == NULL) ERREUR_FATALE("car applique sur nil");
+    if (!cons_p(e)) ERREUR_FATALE("car appliqué sur un objet qui n'est pas un cons.");
+    return e->data.CONS.car;
+}
+
+sexpr cdr(sexpr e){
+    if (e == NULL) ERREUR_FATALE("cdr appliqué sur nil (liste vide).");
+    if (!cons_p(e)) ERREUR_FATALE("cdr appliqué sur un objet qui n'est pas un cons.");
+    return e->data.CONS.cdr;
+}
+
+void set_car(sexpr e, sexpr nouvelle) {
+    if (e == NULL) ERREUR_FATALE("set_car appliqué sur nil.");
+    if (!cons_p(e)) ERREUR_FATALE("set_car appliqué sur un objet qui n'est pas un cons.");
+    e->data.CONS.car = nouvelle;
+}
+
+void set_cdr(sexpr e, sexpr nouvelle) {
+    if (e == NULL) ERREUR_FATALE("set_cdr appliqué sur nil.");
+    if (!cons_p(e)) ERREUR_FATALE("set_cdr appliqué sur un objet qui n'est pas un cons.");
+    e->data.CONS.cdr = nouvelle;
+}
+
+void afficher_liste(sexpr e) {
+    sexpr y;
+    afficher(car(e));
+    
+    y = cdr(e);
+    
+    if (y == NULL) {
+        return; 
+    } else if (cons_p(y)) {
+        printf(" ");
+        afficher_liste(y);
+    } else {
+        printf(" . ");
+        afficher(y);
+    }
+}
+
+sexpr new_primitive(char *nom, primitive p){
+    
+}
