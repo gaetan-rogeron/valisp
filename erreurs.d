@@ -1,1 +1,1 @@
-erreurs.o: erreurs.c couleurs.h erreurs.h
+erreurs.o: erreurs.c couleurs.h erreurs.h types.h

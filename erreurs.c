@@ -67,3 +67,41 @@ void erreur_parseur(char *explication) {
     /*   erreur(SYNTAXE,"parseur vaλisp", explication, NULL); */
 
 }
+
+
+sexpr SEXPR_ERREUR = NULL;
+char *FONCTION_ERREUR = NULL;
+char *MESSAGE_ERREUR = NULL;
+enum erreurs TYPE_ERREUR = RUNTIME;
+
+const char* nom_erreurs[] = {
+    "TYPAGE", "ARITE", "NOM", "MEMOIRE", 
+    "DIVISION_PAR_ZERO", "SYNTAXE", "MEMOIRE_PARSEUR", "RUNTIME"
+};
+
+void afficher_erreur(void) {
+    printf("\033[31m"); 
+    
+    printf("Erreur d'exécution [%s] : %s\n", nom_erreurs[TYPE_ERREUR], MESSAGE_ERREUR);
+    
+    if (FONCTION_ERREUR != NULL) {
+        printf("Fonction fautive : <%s>\n", FONCTION_ERREUR);
+    }
+    
+    if (SEXPR_ERREUR != NULL) {
+        printf("Valeur fautive : <");
+        afficher(SEXPR_ERREUR);
+        printf(">\n");
+    }
+    
+    printf("\033[0m");
+}
+
+void erreur(enum erreurs type, char *fonction, char *explication, sexpr s) {
+    TYPE_ERREUR = type;
+    FONCTION_ERREUR = fonction;
+    MESSAGE_ERREUR = explication;
+    SEXPR_ERREUR = s;
+    
+    longjmp(*jump_buffer(), 1); 
+}

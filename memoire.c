@@ -1,10 +1,13 @@
 #include "allocateur.h"
 #include "erreurs.h"
+#include "memoire.h"
 
 void *valisp_malloc(size_t size){
-    void *res = allocateur_malloc(size);
-    if (res == NULL){
-        ERREUR_FATALE("ERREUR ALLOCATION MALLOC");
+    void *ptr = allocateur_malloc(size);
+    
+    if (ptr == NULL) {
+        erreur(MEMOIRE, "@valloc", "plus de mémoire disponible", NULL);
     }
-    return res;
+    
+    return ptr;
 }
