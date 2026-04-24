@@ -50,12 +50,16 @@ void afficher(sexpr e){
         printf("(");
         afficher_liste(e);
         printf(")");
+    case prim:
+        printf("#p<%s>", e->data.PRIMITIVE.nom);
+        break;
+    case spec:
+        printf("#s<%s>", e->data.PRIMITIVE.nom);
+        break;
     default: 
         printf("<\?\?\?>");
         break;
-    }
-
-   
+    }  
 }
 
 sexpr new_integer(int32_t i){
@@ -202,5 +206,72 @@ void afficher_liste(sexpr e) {
 }
 
 sexpr new_primitive(char *nom, primitive p){
-    
+    sexpr res = valisp_malloc(sizeof(struct valisp_object));
+    res->type = prim;
+    res->data.PRIMITIVE.nom = chaine_vers_memoire(nom);
+    res->data.PRIMITIVE.f = p;
+    return res;
 }
+
+sexpr new_speciale(char *nom, primitive p) {
+    sexpr res = (sexpr)valisp_malloc(sizeof(struct valisp_object));
+    res->type = spec;
+    res->data.PRIMITIVE.nom = chaine_vers_memoire(nom);
+    res->data.PRIMITIVE.f = p;
+    return res;
+}
+
+bool prim_p(sexpr val) {
+    if (val == NULL) return false;
+    return val->type == prim;
+}
+
+bool spec_p(sexpr val) {
+    if (val == NULL) return false;
+    return val->type == spec;
+}
+
+char* get_name(sexpr p) {
+    if (!prim_p(p) && !spec_p(p)) {
+        ERREUR_FATALE("Le type n'est ni une primitive ni une forme speciale");
+    }
+    return p->data.PRIMITIVE.nom;
+}
+
+primitive get_prim(sexpr p) {
+    if (!prim_p(p) && !spec_p(p)) {
+        ERREUR_FATALE("Le type est ni une primitive ni une forme speciale");
+    }
+    return p->data.PRIMITIVE.f;
+}
+
+sexpr run_prim(sexpr p, sexpr liste, sexpr env) {
+    primitive func = get_prim(p);
+    return func(liste, env);
+}
+
+bool sexpr_equal(sexpr e1, sexpr e2){
+    if (e1 == NULL && e2 == NULL) {
+        return true;
+    }
+    if (e1 == NULL || e2 == NULL){
+        return false;
+    }
+    if (e1->type != e2->type){
+        return false;
+    }
+
+    switch (e1->type) {
+        case entier:
+            return e1->data.INTEGER == e2->data.INTEGER;
+        case chaine:
+        case symbole:
+            return strcmp(e1->data.STRING, e2->data.STRING) == 0;
+        case couple:
+            return sexpr_equal(car(e1), car(e2)) && sexpr_equal(cdr(e1), cdr(e2));
+        case prim:
+        case spec:
+            return e1->data.PRIMITIVE.f == e2->data.PRIMITIVE.f;
+        default:
+            return false;
+    }

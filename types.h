@@ -49,5 +49,6 @@ char* get_name(sexpr p);
 primitive get_prim(sexpr p);
 sexpr run_prim(sexpr p, sexpr liste, sexpr env);
 
+bool sexpr_equal(sexpr e1, sexpr e2);
 
 #endif
